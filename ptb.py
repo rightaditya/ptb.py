@@ -6,6 +6,7 @@ ptb.py: Module for reading and transforming trees in the Penn Treebank
 format.
 
 Author: Joseph Irwin
+Modifications: Aditya Bhargava (labelled phrases output)
 
 To the extent possible under law, the person who associated CC0 with
 this work has waived all copyright and related or neighboring rights

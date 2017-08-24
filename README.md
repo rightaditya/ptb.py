@@ -1,6 +1,7 @@
 # PTB.py
 
-**Author:** Joseph Irwin
+**Author:** Joseph Irwin  
+**Modifications:** Aditya Bhargava (labelled phrases output)
 
 A Python module for reading, writing, and transforming trees in the
 Penn Treebank format. The command-line interface implements
