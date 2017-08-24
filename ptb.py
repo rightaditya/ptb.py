@@ -493,6 +493,16 @@ def leaves(tx):
         return st + ([tx.leaf()] if tx.leaf() else [])
     return traverse(tx, proc, state=[])
 
+def labelled_phrases(tx):
+    def proc(tx, st):
+        label = tx.symbol()
+        if not label:
+            label = tx.leaf().pos
+        else:
+            label = label.label
+        return st + ['\t'.join([' '.join(l.word for l in leaves(tx)), label])]
+    return traverse(tx, proc, state=[])
+
 def make_parsed_sent(tx):
     return ParsedSentence(leaves(tx), make_anchored(tx))
 
@@ -518,10 +528,10 @@ def main(args):
       --remove-parent           Remove parent label annotation from tree node labels. [default: False]
       --mark-top                Mark the top constituent with ^ROOT. [default: False]
       --remove-empties          Remove empty elements.
-      --format FMT              Specify format to output trees in. [default: ptb]
+      --format FMT              Specify format to output trees in. [default: phrases]
       -h --help                 Show this screen.
 
-    Support output formats are: ptb, json, sentence, tagged_sentence, rules, grammar.
+    Support output formats are: ptb, json, sentence, tagged_sentence, rules, grammar, phrases.
     """
     from docopt import docopt
     args = docopt(main.__doc__, argv=args)
@@ -588,6 +598,9 @@ def main(args):
                     print(' '.join(l.word for l in leaves(t)))
                 elif fmt == 'tagged_sentence':
                     print(' '.join('_'.join((l.word,l.pos)) for l in leaves(t)))
+                elif fmt == 'phrases':
+                    for phrase in labelled_phrases(t):
+                        print(phrase)
                 else:
                     raise ValueError()
 
