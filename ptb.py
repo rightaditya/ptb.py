@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 
 """
@@ -13,8 +13,6 @@ to this work.
 http://creativecommons.org/publicdomain/zero/1.0/
 """
 
-
-from __future__ import print_function
 
 import re
 
