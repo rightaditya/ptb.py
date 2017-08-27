@@ -35,8 +35,9 @@ LPAREN_TOKEN = gensym()
 RPAREN_TOKEN = gensym()
 STRING_TOKEN = gensym()
 
+
 class Token(object):
-    _token_ids = {LPAREN_TOKEN:"(", RPAREN_TOKEN:")", STRING_TOKEN:"STRING"}
+    _token_ids = {LPAREN_TOKEN: "(", RPAREN_TOKEN: ")", STRING_TOKEN: "STRING"}
 
     def __init__(self, token_id, value=None, lineno=None):
         self.token_id = token_id
@@ -45,12 +46,15 @@ class Token(object):
 
     def __str__(self):
         return "Token:'{tok}'{ln}".format(
-            tok=(self.value if self.value is not None else self._token_ids[self.token_id]),
+            tok=(self.value if self.value is not None
+                 else self._token_ids[self.token_id]),
             ln=(':{}'.format(self.lineno) if self.lineno is not None else '')
             )
 
 
 _token_pat = re.compile(r'\(|\)|[^()\s]+')
+
+
 def lex(line_or_lines):
     """
     Create a generator which returns tokens parsed from the input.
@@ -61,7 +65,7 @@ def lex(line_or_lines):
     if isinstance(line_or_lines, str):
         line_or_lines = [line_or_lines]
 
-    for n,line in enumerate(line_or_lines):
+    for n, line in enumerate(line_or_lines):
         line.strip()
         for m in _token_pat.finditer(line):
             if m.group() == '(':
@@ -78,7 +82,9 @@ def lex(line_or_lines):
 
 
 class Symbol:
-    _pat = re.compile(r'(?P<label>^[^0-9=-]+)|(?:-(?P<tag>[^0-9=-]+))|(?:=(?P<parind>[0-9]+))|(?:-(?P<coind>[0-9]+))')
+    _pat = re.compile(r'(?P<label>^[^0-9=-]+)|(?:-(?P<tag>[^0-9=-]+))|'
+                      r'(?:=(?P<parind>[0-9]+))|(?:-(?P<coind>[0-9]+))')
+
     def __init__(self, label):
         self.label = label
         self.tags = []
@@ -115,10 +121,12 @@ class Symbol:
             ('^{}'.format(self.parent) if self.parent is not None else '')
         )
 
+
 class Leaf:
     def __init__(self, word, pos):
         self.word = word
         self.pos = pos
+
 
 class TExpr:
     def __init__(self, head, first_child, next_sibling):
@@ -148,13 +156,16 @@ class TExpr:
         if self.leaf():
             return '{} -> {}'.format(self.leaf().pos, self.leaf().word)
         else:
-            return '{} -> {}'.format(self.symbol(), ' '.join(str(c.symbol() or c.leaf().pos) for c in self.children()))
+            return '{} -> {}'.format(self.symbol(),
+                                     ' '.join(str(c.symbol() or c.leaf().pos)
+                                              for c in self.children()))
 
     def rule_tpl(self):
         if self.leaf():
-            return (self.leaf().pos, self.leaf().word)
+            return self.leaf().pos, self.leaf().word
         else:
-            return (str(self.symbol()), ' '.join(str(c.symbol() or c.leaf().pos) for c in self.children()))
+            return str(self.symbol()), ' '.join(str(c.symbol() or c.leaf().pos)
+                                                for c in self.children())
 
     def __str__(self):
         if self.leaf():
@@ -177,8 +188,8 @@ def parse(line_or_lines):
             stack.append(tok)
         else:
             if (istok(stack[-1], STRING_TOKEN) and
-                istok(stack[-2], STRING_TOKEN) and
-                istok(stack[-3], LPAREN_TOKEN)):
+                    istok(stack[-2], STRING_TOKEN) and
+                    istok(stack[-3], LPAREN_TOKEN)):
                 w = Leaf(stack[-1].value, stack[-2].value)
                 stack.pop()
                 stack.pop()
@@ -192,8 +203,8 @@ def parse(line_or_lines):
                     if istok(head, STRING_TOKEN):
                         tx = TExpr(
                             Symbol(head.value),
-                            first_child = tail,
-                            next_sibling = None
+                            first_child=tail,
+                            next_sibling=None
                         )
                     else:
                         head.next_sibling = tail
@@ -251,15 +262,15 @@ def remove_empty_elements(tx):
             q = q_none if tx.leaf().pos == '-NONE-' else q_ok
         else:
             cs = st.pop()
-            cs = [c for q,c in cs if q is q_ok]
+            cs = [c for q, c in cs if q is q_ok]
             if cs:
                 tx.first_child = cs[0]
-                for c,d in zip(cs[:-1],cs[1:]):
+                for c, d in zip(cs[:-1], cs[1:]):
                     c.next_sibling = d
                 cs[-1].next_sibling = None
             else:
                 q = q_none
-        st[-1].append( (q, tx) )
+        st[-1].append((q, tx))
         return st
 
     state = traverse(tx, pre, post, state)
@@ -270,6 +281,7 @@ def simplify_labels(tx, keep_sbj=False):
         if tx.symbol():
             tx.symbol().simplify(keep_sbj)
     traverse(tx, proc)
+
 
 def annot_parent(tx, keep_sbj=False):
     def pre(tx, st):
@@ -285,9 +297,11 @@ def annot_parent(tx, keep_sbj=False):
             # else:
             #     tx.leaf().pos = str(tx.leaf().pos) + '^' + parent
         return st + [s]
+
     def post(tx, st):
         return st[:-1]
     traverse(tx, pre, post, state=[])
+
 
 def remove_parent(tx, keep_sbj=False):
     def pre(tx, st):
@@ -297,6 +311,7 @@ def remove_parent(tx, keep_sbj=False):
             tx.leaf().pos = tx.leaf().pos.split('^')[0]
     traverse(tx, pre)
 
+
 def mark_top(tx, keep_sbj=False):
     cs = list(tx.children())
     assert(len(cs) == 1)
@@ -305,8 +320,11 @@ def mark_top(tx, keep_sbj=False):
 
 
 _dummy_labels = ('ROOT', 'TOP')
+
+
 def add_root(tx, root_label='ROOT'):
-    if (tx.head is None or (tx.symbol() and tx.symbol().label in _dummy_labels)):
+    if (tx.head is None or
+            (tx.symbol() and tx.symbol().label in _dummy_labels)):
         tx.head = Symbol(root_label)
     else:
         tx = TExpr(Symbol(root_label), tx)
@@ -326,6 +344,7 @@ def all_rules(tx):
             return st
         return st + [tx.rule()]
     return traverse(tx, pre, state=[])
+
 
 def grammar_rules(tx):
     """
@@ -377,7 +396,7 @@ def all_spans(tx):
 
     spans, _, _, _ = traverse(tx, pre, post, state)
     spans.sort()
-    return [s for n,s in spans]
+    return [s for n, s in spans]
 
 
 ##################
@@ -401,8 +420,8 @@ class AnchoredTree(object):
 
     def tojson(self):
         return {
-            "spans" : [s.tojson() for s in self.spans],
-            "edges" : self.edges
+            "spans": [s.tojson() for s in self.spans],
+            "edges": self.edges
         }
 
 
@@ -438,13 +457,15 @@ class ParsedSentence(object):
 
     def tojson(self):
         return {
-            "parse" : self.tree.tojson(),
-            "words" : [t.word for t in self.terminals],
-            "tags" : [t.pos for t in self.terminals]
+            "parse": self.tree.tojson(),
+            "words": [t.word for t in self.terminals],
+            "tags": [t.pos for t in self.terminals]
         }
 
 
 TERMINAL_NODE_LABEL = '<t>'
+
+
 def make_anchored(tx):
     state = (
         [],            # [<begin>] (pre)→(post) [(<span>, (<index>, [<child_indices>]) | None)]
@@ -454,7 +475,7 @@ def make_anchored(tx):
     )
 
     def pre(tx, st):
-        "save post-order index and current token offset"
+        """"save post-order index and current token offset"""
         nodes, stack, index, begin = st
         return (
             nodes + [begin],
@@ -464,7 +485,7 @@ def make_anchored(tx):
         )
 
     def post(tx, st):
-        "save span and edge to <nodes> at <index>"
+        """save span and edge to <nodes> at <index>"""
         nodes, stack, next_index, end = st
         index, children = stack.pop()
 
@@ -482,17 +503,19 @@ def make_anchored(tx):
         )
 
         stack[-1][-1].append(index)
-        return (nodes, stack, next_index, end)
+        return nodes, stack, next_index, end
 
     nodes, _, _, _ = traverse(tx, pre, post, state)
-    spans = [s for s,e in nodes]
-    edges = [e for s,e in nodes if e]
+    spans = [s for s, e in nodes]
+    edges = [e for s, e in nodes if e]
     return AnchoredTree(spans, edges)
+
 
 def leaves(tx):
     def proc(tx, st):
         return st + ([tx.leaf()] if tx.leaf() else [])
     return traverse(tx, proc, state=[])
+
 
 def labelled_phrases(tx):
     def proc(tx, st):
@@ -504,8 +527,10 @@ def labelled_phrases(tx):
         return st + ['\t'.join([' '.join(l.word for l in leaves(tx)), label])]
     return traverse(tx, proc, state=[])
 
+
 def rl_sentence(tx):
     return '\t'.join([tx.symbol().label, leaves(tx)])
+
 
 def make_parsed_sent(tx):
     return ParsedSentence(leaves(tx), make_anchored(tx))
@@ -535,7 +560,8 @@ def main(args):
       --format FMT              Specify format to output trees in. [default: phrases]
       -h --help                 Show this screen.
 
-    Support output formats are: ptb, json, sentence, tagged_sentence, rules, grammar, phrases, rl_sentence.
+    Support output formats are: ptb, json, sentence, tagged_sentence, rules,
+                                grammar, phrases, rl_sentence.
     """
     from docopt import docopt
     args = docopt(main.__doc__, argv=args)
@@ -568,7 +594,7 @@ def main(args):
         fmt = args['--format']
         if fmt == 'json':
             import json
-            o = {'sentences' : [make_parsed_sent(t).tojson() for t in trees()]}
+            o = {'sentences': [make_parsed_sent(t).tojson() for t in trees()]}
             print(json.dumps(o))
         elif fmt == 'rules':
             import collections
@@ -577,8 +603,8 @@ def main(args):
                 for t in trees()
                 for r in all_rules(t)
             )
-            for r,c in rules.most_common():
-                print(r,c,sep='\t')
+            for r, c in rules.most_common():
+                print(r, c, sep='\t')
         elif fmt == 'grammar':
             import collections
             rules = collections.Counter(
@@ -587,11 +613,11 @@ def main(args):
                 for r in grammar_rules(t)
             )
             gram = dict()
-            for r,c in rules.most_common():
+            for r, c in rules.most_common():
                 gram.setdefault(r[0], []).append((r[1], c))
             for lhs in gram:
-                total = float(sum(c for rhs,c in gram[lhs]))
-                for rhs,c in gram[lhs]:
+                total = float(sum(c for rhs, c in gram[lhs]))
+                for rhs, c in gram[lhs]:
                     print('{} -> {}\t{}'.format(lhs, rhs, c/total))
         else:
             for t in trees():
@@ -601,7 +627,8 @@ def main(args):
                 elif fmt == 'sentence':
                     print(' '.join(l.word for l in leaves(t)))
                 elif fmt == 'tagged_sentence':
-                    print(' '.join('_'.join((l.word,l.pos)) for l in leaves(t)))
+                    print(' '.join('_'.join((l.word, l.pos))
+                                   for l in leaves(t)))
                 elif fmt == 'phrases':
                     for phrase in labelled_phrases(t):
                         print(phrase)
@@ -613,6 +640,7 @@ def main(args):
 
     if args['test']:
         dotests()
+
 
 if __name__ == "__main__":
     import sys
