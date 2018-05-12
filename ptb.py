@@ -625,10 +625,11 @@ def main(args):
                 if fmt == 'ptb':
                     print(t)
                 elif fmt == 'sentence':
-                    print(' '.join(l.word for l in leaves(t)))
+                    print(' '.join(l.word for l in leaves(t)
+                                   if l.pos != '-NONE-'))
                 elif fmt == 'tagged_sentence':
                     print(' '.join('_'.join((l.word, l.pos))
-                                   for l in leaves(t)))
+                                   for l in leaves(t) if l.pos != '-NONE'))
                 elif fmt == 'phrases':
                     for phrase in labelled_phrases(t):
                         print(phrase)
